@@ -1,10 +1,10 @@
 # LinguaBuddy - API Specification
 
-This document details the planned REST API endpoints for LinguaBuddy.
+This document details the REST API endpoints for LinguaBuddy.
 
 ---
 
-## Implemented Endpoints (Stage 1)
+## Implemented Endpoints
 
 ### `GET /api/health`
 
@@ -13,7 +13,6 @@ Checks the server operational status.
 - **Status:** Implemented (Stage 1)
 - **Method:** `GET`
 - **Path:** `/api/health`
-- **Request Headers:** None
 - **Response `200 OK`:**
   ```json
   {
@@ -24,65 +23,46 @@ Checks the server operational status.
 
 ---
 
-## Planned Endpoints (Not Implemented in Stage 1)
-
 ### `POST /api/chat`
 
-Sends user conversation turn and receives AI response with gentle corrections.
+Sends user conversation message to Google Gemma 4 and receives AI partner reply.
 
-- **Status:** Planned (Stage 2+)
+- **Status:** Implemented (Stage 2)
 - **Method:** `POST`
 - **Path:** `/api/chat`
 - **Request Body:**
   ```json
   {
-    "targetLanguage": "Spanish",
-    "proficiencyLevel": "A2",
-    "scenario": "Ordering Coffee",
-    "message": "Quiero una café por favor.",
-    "conversationHistory": []
+    "message": "Hello! I want to practice English."
   }
   ```
-- **Response `200 OK` (Planned Structure):**
+- **Response `200 OK`:**
   ```json
   {
-    "response": "¡Claro! ¿Qué tipo de café prefieres, con leche o solo?",
-    "corrections": [
-      {
-        "original": "una café",
-        "corrected": "un café",
-        "explanation": "'Café' is masculine in Spanish, so we use 'un' instead of 'una'."
-      }
-    ],
-    "suggestedVocab": ["con leche", "solo"]
+    "reply": "Hello! I would love to practice English with you. What would you like to talk about today?"
+  }
+  ```
+- **Response `400 Bad Request`:**
+  ```json
+  {
+    "error": "Message is required and cannot be empty."
+  }
+  ```
+- **Response `500 Internal Server Error`:**
+  ```json
+  {
+    "error": "API Configuration Error: GEMINI_API_KEY is missing or invalid in server environment."
   }
   ```
 
 ---
 
+## Planned Endpoints (Not Implemented Yet)
+
 ### `POST /api/session-summary`
 
 Generates end-of-session summary and review notes.
 
-- **Status:** Planned (Stage 2+)
+- **Status:** Planned (Future Stage)
 - **Method:** `POST`
 - **Path:** `/api/session-summary`
-- **Request Body:**
-  ```json
-  {
-    "sessionId": "session-123",
-    "conversationHistory": []
-  }
-  ```
-- **Response `200 OK` (Planned Structure):**
-  ```json
-  {
-    "summary": "Great session! You practiced ordering coffee and asking about options.",
-    "keyVocabulary": [
-      { "word": "un café", "meaning": "a coffee" },
-      { "word": "con leche", "meaning": "with milk" }
-    ],
-    "strengths": ["Clear sentence structure", "Good polite phrasing"],
-    "areasToPractice": ["Gender agreement with articles"]
-  }
-  ```

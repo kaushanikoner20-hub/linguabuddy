@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import chatRouter from './routes/chat.js';
 
 dotenv.config();
 
@@ -15,6 +16,17 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
     service: 'LinguaBuddy API'
+  });
+});
+
+// Chat API Routes (Stage 2 - Gemma 4 Integration)
+app.use('/api', chatRouter);
+
+// Global Error Middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled Server Error:', err.message);
+  res.status(500).json({
+    error: 'Internal Server Error'
   });
 });
 

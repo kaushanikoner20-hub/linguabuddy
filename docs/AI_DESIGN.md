@@ -1,36 +1,40 @@
 # LinguaBuddy - AI Integration Design
 
-> **Note:** Gemma integration is *not* part of Stage 1 and will be built in a future stage.
-
 ## 1. Overview
-Google Gemma 4 is intended to serve as a core product component for LinguaBuddy rather than a decorative chatbot. The AI acts as a patient, encouraging, and adaptive conversation partner specifically tuned for language learners.
+Google Gemma 4 is integrated into LinguaBuddy as a core conversational partner. The backend communicates with Google Gemma 4 server-side to generate natural, patient language-practice responses.
 
 ## 2. Configuration & Specifications
 
-- **Selected Model:** `gemma-4-26b-a4b-it`
+- **Selected Model:** `gemma-4-26b-a4b-it` (Configurable via `GEMMA_MODEL` environment variable)
 - **Official SDK:** `@google/genai`
 - **Access Method:** Google Gemini API (Server-Side invocation only)
 
-## 3. Core AI Responsibilities
+## 3. Basic System Instruction (Stage 2)
 
-1. **Natural Conversation:** Engage in natural, context-aware dialogue matching selected practice scenarios.
-2. **Gentle Correction:** Provide soft, encouraging feedback when the user makes grammatical, lexical, or structural mistakes.
-3. **Short Explanations:** Offer concise, easy-to-understand explanations for corrections without overwhelming the learner.
-4. **Vocabulary Suggestions:** Recommend useful alternative phrasing and context-appropriate vocabulary words.
-5. **Adaptive Difficulty:** Automatically align sentence complexity and vocabulary level with the user's selected proficiency level.
-6. **Session Summary:** Synthesize conversational highlights into actionable learning feedback at session conclusion.
+```text
+You are LinguaBuddy, a patient and encouraging language-practice partner.
 
-## 4. Prompt Engineering Strategy (Planned)
+Help a learner practice a target language through natural conversation.
 
-The backend prompt architecture will enforce strict system instructions:
-- **Tone:** Empathetic, supportive, non-critical, patient.
-- **Language Level Control:** Restrict vocabulary complexity to match user level.
-- **Output Schema:** Standardized JSON formatting separating:
-  - `response`: Conversational message in target language.
-  - `corrections`: Array of gentle corrections (if any).
-  - `explanation`: Short learning note in user's native language.
-  - `suggestedVocab`: Key vocabulary terms introduced in the response.
+Be supportive and non-judgmental.
 
-## 5. Security & Key Management
-- The Gemini API Key (`GEMINI_API_KEY`) resides exclusively in server environment files (`.env`).
-- Client applications never communicate directly with Google Gemini endpoints.
+Keep responses concise.
+
+Do not overwhelm the learner with grammar explanations yet.
+
+For this stage, focus primarily on having a natural conversation.
+```
+
+Stored in: `server/src/prompts/languagePartner.js`
+
+## 4. Request & Response Flow
+
+1. **Client Submission:** React client sends `POST /api/chat` with `{ "message": "..." }`.
+2. **Route Validation:** `server/src/routes/chat.js` validates non-empty message.
+3. **Gemma Service Invocation:** `generateConversationResponse()` calls `@google/genai` `ai.models.generateContent({ model: "gemma-4-26b-a4b-it", contents: userMessage, config: { systemInstruction } })`.
+4. **Response Return:** Generated reply text returned to client: `{ "reply": "..." }`.
+
+## 5. Security Approach
+- `GEMINI_API_KEY` is loaded server-side via `dotenv`.
+- Client applications never access Google API endpoints directly.
+- `.env` files are ignored by `.gitignore`.
