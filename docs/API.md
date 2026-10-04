@@ -1,19 +1,16 @@
 # LinguaBuddy - API Specification
 
-This document details the planned REST API endpoints for LinguaBuddy.
+This document describes the REST API of LinguaBuddy.
 
 ---
 
-## Implemented Endpoints (Stage 1)
+## Implemented Endpoints
 
 ### `GET /api/health`
 
 Checks the server operational status.
 
 - **Status:** Implemented (Stage 1)
-- **Method:** `GET`
-- **Path:** `/api/health`
-- **Request Headers:** None
 - **Response `200 OK`:**
   ```json
   {
@@ -24,47 +21,56 @@ Checks the server operational status.
 
 ---
 
-## Planned Endpoints (Not Implemented in Stage 1)
-
 ### `POST /api/chat`
 
-Sends user conversation turn and receives AI response with gentle corrections.
+Sends the learner's newest message, plus recent conversation history, to Gemma 4 and returns the reply. The server stores nothing: the client sends the history with every request.
 
-- **Status:** Planned (Stage 2+)
-- **Method:** `POST`
-- **Path:** `/api/chat`
+- **Status:** Implemented (Stage 3 - multi-turn conversation)
 - **Request Body:**
   ```json
   {
-    "targetLanguage": "Spanish",
-    "proficiencyLevel": "A2",
-    "scenario": "Ordering Coffee",
-    "message": "Quiero una café por favor.",
-    "conversationHistory": []
+    "message": "My name is Kaushani.",
+    "conversationHistory": [
+      { "role": "user", "content": "Hello!" },
+      { "role": "assistant", "content": "Hi! How are you today?" }
+    ]
   }
   ```
-- **Response `200 OK` (Planned Structure):**
+  - `message` (string, required): non-empty, max 2000 characters.
+  - `conversationHistory` (array, optional): earlier messages, oldest first. Each item is `{ "role": "user" | "assistant", "content": string }`. Invalid items are ignored, and only the most recent 12 messages are used.
+- **Response `200 OK`:**
   ```json
   {
-    "response": "¡Claro! ¿Qué tipo de café prefieres, con leche o solo?",
-    "corrections": [
-      {
-        "original": "una café",
-        "corrected": "un café",
-        "explanation": "'Café' is masculine in Spanish, so we use 'un' instead of 'una'."
-      }
-    ],
-    "suggestedVocab": ["con leche", "solo"]
+    "reply": "Nice to meet you, Kaushani! What made you interested in learning English?"
   }
   ```
+- **Errors** (`{ "error": "<friendly message>" }`, never stack traces or keys):
+  - `400` - message missing, empty, or too long.
+  - `500` - AI service not configured, or the Gemma request failed.
 
 ---
 
+## Planned Endpoints (Not Implemented Yet)
+
+### Planned `POST /api/chat` extensions (later stages)
+
+Language, level and scenario settings and structured corrections are planned:
+
+```json
+{
+  "targetLanguage": "Spanish",
+  "proficiencyLevel": "A2",
+  "scenario": "Ordering Coffee"
+}
+```
+
+with `corrections` and `suggestedVocab` added to the response. None of these fields are read by the server today.
+
 ### `POST /api/session-summary`
 
-Generates end-of-session summary and review notes.
+Generates an end-of-session summary and review notes.
 
-- **Status:** Planned (Stage 2+)
+- **Status:** Planned
 - **Method:** `POST`
 - **Path:** `/api/session-summary`
 - **Request Body:**

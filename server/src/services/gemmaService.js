@@ -1,12 +1,15 @@
 import { GoogleGenAI } from '@google/genai';
 import { SYSTEM_INSTRUCTION } from '../prompts/languagePartner.js';
+import { buildContents } from '../utils/Conversation.js';
 
 /**
- * Generates a conversation response using Google Gemma 4 via @google/genai.
- * @param {string} userMessage - The learner's input message.
- * @returns {Promise<string>} - The generated reply text from Gemma.
+ * Generates a conversation reply using Google Gemma 4 via @google/genai.
+ * @param {string} userMessage - The learner's newest message.
+ * @param {Array<{role: 'user'|'assistant', content: string}>} [conversationHistory]
+ *        Recent earlier messages (sent by the client; not stored on the server).
+ * @returns {Promise<string>} The reply text from Gemma.
  */
-export async function generateConversationResponse(userMessage) {
+export async function generateConversationResponse(userMessage, conversationHistory = []) {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey || apiKey === 'your_api_key_here') {
@@ -23,7 +26,7 @@ export async function generateConversationResponse(userMessage) {
 
     const response = await ai.models.generateContent({
       model: modelName,
-      contents: userMessage,
+      contents: buildContents(userMessage, conversationHistory),
       config: {
         systemInstruction: SYSTEM_INSTRUCTION
       }

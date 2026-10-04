@@ -1,141 +1,88 @@
-import React, { useEffect, useState } from 'react';
-import { MessageSquareHeart, Sparkles, Server, CheckCircle2, AlertCircle, Send, Loader2 } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { MessageSquareHeart, RotateCcw } from 'lucide-react';
+import ChatWindow from './components/Chatwindow.jsx';
+import ChatInput from './components/Chatinput.jsx';
+import { sendChatMessage } from './services/Chatapi.js';
+
+// How many earlier messages are sent along with each new message.
+const MAX_HISTORY_MESSAGES = 12;
 
 export default function App() {
-  const [healthStatus, setHealthStatus] = useState({ loading: true, data: null, error: null });
-  const [message, setMessage] = useState('Hello! I want to practice English.');
-  const [chatState, setChatState] = useState({ loading: false, reply: null, error: null });
+  // [{ role: 'user' | 'assistant', content: string }]
+  const [messages, setMessages] = useState([]);
+  const [draft, setDraft] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const abortRef = useRef(null);
 
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => setHealthStatus({ loading: false, data, error: null }))
-      .catch((err) => setHealthStatus({ loading: false, data: null, error: err.message }));
-  }, []);
+  const handleSend = async () => {
+    const text = draft.trim();
+    if (!text || loading) return; // never send empty messages
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!message.trim() || chatState.loading) return;
+    // History = everything before this new message (taken from current state).
+    const conversationHistory = messages.slice(-MAX_HISTORY_MESSAGES);
 
-    setChatState({ loading: true, reply: null, error: null });
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setMessages((prev) => [...prev, { role: 'user', content: text }]);
+    setDraft('');
+    setError(null);
+    setLoading(true);
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: message.trim() }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || `Server returned status ${res.status}`);
-      }
-
-      setChatState({ loading: false, reply: data.reply, error: null });
+      const reply = await sendChatMessage({ message: text, conversationHistory }, controller.signal);
+      setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
     } catch (err) {
-      setChatState({ loading: false, reply: null, error: err.message });
+      if (err.name === 'AbortError') return; // conversation was reset mid-request
+      // Take the unsent message back out and restore it to the input for a retry.
+      setMessages((prev) => prev.slice(0, -1));
+      setDraft(text);
+      setError(err.message);
+    } finally {
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+        setLoading(false);
+      }
     }
   };
 
+  const handleNewConversation = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setMessages([]);
+    setDraft('');
+    setError(null);
+    setLoading(false);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-6">
-      <div className="max-w-2xl w-full bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-xl text-center space-y-6">
-        {/* Header */}
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-teal-500/10 text-teal-400 mb-2">
-          <MessageSquareHeart className="w-8 h-8" />
-        </div>
-
-        <h1 className="text-4xl font-bold tracking-tight text-white">
-          LinguaBuddy
-        </h1>
-
-        <p className="text-lg text-slate-300">
-          A patient, supportive AI language-practice partner designed for real conversational learning.
-        </p>
-
-        {/* Stage 2 Integration Test Section */}
-        <div className="bg-slate-900/80 border border-slate-700/60 rounded-xl p-5 text-left space-y-4">
-          <div className="flex items-center gap-2 text-teal-400 font-semibold text-sm uppercase tracking-wider">
-            <Sparkles className="w-4 h-4" />
-            Stage 2 — Gemma 4 Integration Test
+    <div className="h-dvh bg-slate-900 text-slate-100 flex justify-center sm:p-4">
+      <div className="w-full max-w-3xl h-full flex flex-col bg-slate-800 sm:border sm:border-slate-700 sm:rounded-2xl overflow-hidden">
+        <header className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-700">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 shrink-0 rounded-full bg-teal-500/10 text-teal-400 flex items-center justify-center">
+              <MessageSquareHeart className="w-5 h-5" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold text-white leading-tight">LinguaBuddy</h1>
+              <p className="text-xs sm:text-sm text-slate-400 truncate">Your patient language practice partner</p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={handleNewConversation}
+            disabled={messages.length === 0 && !loading && !error && !draft}
+            className="shrink-0 flex items-center gap-1.5 text-xs sm:text-sm text-slate-200 border border-slate-600 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg px-3 py-2 transition-colors"
+          >
+            <RotateCcw className="w-4 h-4" aria-hidden="true" />
+            New Conversation
+          </button>
+        </header>
 
-          <form onSubmit={handleSendMessage} className="flex gap-2">
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type a message to test Gemma..."
-              className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-teal-500 transition"
-              disabled={chatState.loading}
-            />
-            <button
-              type="submit"
-              disabled={chatState.loading || !message.trim()}
-              className="bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white font-medium text-sm px-5 py-2.5 rounded-lg flex items-center gap-2 transition"
-            >
-              {chatState.loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" /> Send
-                </>
-              )}
-            </button>
-          </form>
+        <ChatWindow messages={messages} loading={loading} error={error} />
 
-          {/* AI Response Output Box */}
-          {chatState.reply && (
-            <div className="bg-slate-800 border border-teal-500/30 rounded-lg p-4 text-left space-y-1">
-              <span className="text-xs font-semibold text-teal-400 uppercase tracking-wider block">
-                Gemma 4 Response:
-              </span>
-              <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
-                {chatState.reply}
-              </p>
-            </div>
-          )}
-
-          {/* Error Display Box */}
-          {chatState.error && (
-            <div className="bg-rose-950/40 border border-rose-500/30 rounded-lg p-4 text-left flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <div className="space-y-0.5">
-                <span className="text-xs font-semibold text-rose-400 uppercase tracking-wider block">
-                  Error:
-                </span>
-                <p className="text-sm text-rose-200">
-                  {chatState.error}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Backend API Connection Check */}
-        <div className="pt-2 flex items-center justify-between text-xs text-slate-400 border-t border-slate-700/50">
-          <span className="flex items-center gap-1.5 font-mono">
-            <Server className="w-3.5 h-3.5" /> Backend Health:
-          </span>
-
-          {healthStatus.loading && <span className="text-amber-400">Connecting...</span>}
-          {healthStatus.data && (
-            <span className="flex items-center gap-1 text-emerald-400 font-medium">
-              <CheckCircle2 className="w-3.5 h-3.5" /> {healthStatus.data.service} (Status: {healthStatus.data.status})
-            </span>
-          )}
-          {healthStatus.error && (
-            <span className="flex items-center gap-1 text-rose-400 font-medium">
-              <AlertCircle className="w-3.5 h-3.5" /> Disconnected
-            </span>
-          )}
-        </div>
+        <ChatInput value={draft} onChange={setDraft} onSend={handleSend} disabled={loading} />
       </div>
     </div>
   );
