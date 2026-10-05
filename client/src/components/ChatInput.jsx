@@ -1,8 +1,10 @@
 import React from 'react';
 import { Send } from 'lucide-react';
 
-export default function ChatInput({ value, onChange, onSend, disabled }) {
-  const canSend = value.trim().length > 0 && !disabled;
+// disabled: a reply is loading (sending is blocked, typing still allowed)
+// locked:   no language chosen yet (input and Send are both disabled)
+export default function ChatInput({ value, onChange, onSend, disabled, locked = false, placeholder = 'Type your message...' }) {
+  const canSend = value.trim().length > 0 && !disabled && !locked;
 
   // A form submit covers both the Send button and Enter-to-send.
   const handleSubmit = (e) => {
@@ -16,11 +18,12 @@ export default function ChatInput({ value, onChange, onSend, disabled }) {
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Type your message..."
+        placeholder={placeholder}
         aria-label="Your message"
         maxLength={2000}
         autoComplete="off"
-        className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+        disabled={locked}
+        className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 disabled:opacity-50"
       />
       <button
         type="submit"

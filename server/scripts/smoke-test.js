@@ -37,7 +37,7 @@ async function main() {
     const { status } = await call('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: '   ' }),
+      body: JSON.stringify({ message: '   ', targetLanguage: 'English' }),
     });
     if (status === 400) report('PASS', 'POST /api/chat rejects empty message (400)');
     else report('FAIL', 'POST /api/chat rejects empty message', `got ${status}`);
@@ -45,12 +45,25 @@ async function main() {
     report('FAIL', 'POST /api/chat validation', e.message);
   }
 
+  // The selected language is required: no silent default
+  try {
+    const { status } = await call('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Hello' }),
+    });
+    if (status === 400) report('PASS', 'POST /api/chat without targetLanguage is rejected (400)');
+    else report('FAIL', 'POST /api/chat without targetLanguage', `got ${status}, expected 400`);
+  } catch (e) {
+    report('FAIL', 'targetLanguage validation', e.message);
+  }
+
   // Stage 2: LIVE Gemma call
   try {
     const { status, body } = await call('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'Hello! I want to practice English.' }),
+      body: JSON.stringify({ message: 'Hello! I want to practice English.', targetLanguage: 'English', level: 'beginner' }),
     });
     if (status === 200 && typeof body?.reply === 'string' && body.reply.trim()) {
       report('PASS', 'LIVE Gemma call', `reply: "${body.reply.slice(0, 80).replace(/\s+/g, ' ')}..."`);
@@ -68,6 +81,8 @@ async function main() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: 'What is my name?',
+        targetLanguage: 'English',
+        level: 'beginner',
         conversationHistory: [
           { role: 'user', content: 'Hello!' },
           { role: 'assistant', content: 'Hi! How are you today?' },

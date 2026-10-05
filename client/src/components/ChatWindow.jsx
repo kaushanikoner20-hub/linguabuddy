@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import MessageBubble from './MessageBubble.jsx';
 
-export default function ChatWindow({ messages, loading, error }) {
+export default function ChatWindow({ messages, loading, error, ready = true }) {
   const bottomRef = useRef(null);
 
   // Keep the newest message in view.
@@ -14,12 +14,14 @@ export default function ChatWindow({ messages, loading, error }) {
     <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 space-y-4" aria-live="polite">
       {messages.length === 0 && !loading && !error && (
         <p className="text-center text-sm text-slate-400 mt-10">
-          Say hello to start practicing. Write in the language you want to practice.
+          {ready
+            ? 'Say hello to start practicing. Write in the language you selected.'
+            : 'Choose a language and level above to begin.'}
         </p>
       )}
 
       {messages.map((m, i) => (
-        <MessageBubble key={i} role={m.role} content={m.content} />
+        <MessageBubble key={i} message={m} />
       ))}
 
       {loading && (

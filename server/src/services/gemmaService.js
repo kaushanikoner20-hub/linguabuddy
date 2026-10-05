@@ -1,15 +1,35 @@
 import { GoogleGenAI } from '@google/genai';
-import { SYSTEM_INSTRUCTION } from '../prompts/languagePartner.js';
+import { buildSystemInstruction } from '../prompts/languagePartner.js';
 import { buildContents } from '../utils/Conversation.js';
+import { parseGemmaResponse } from '../utils/Gemmaresponse.js';
+import { normalizeLevel, normalizeTargetLanguage } from '../utils/learnerContext.js';
 
 /**
- * Generates a conversation reply using Google Gemma 4 via @google/genai.
- * @param {string} userMessage - The learner's newest message.
- * @param {Array<{role: 'user'|'assistant', content: string}>} [conversationHistory]
- *        Recent earlier messages (sent by the client; not stored on the server).
- * @returns {Promise<string>} The reply text from Gemma.
+ * Generates a language-aware conversation response using Google Gemma 4.
+ * The target language and level are passed to Gemma as context (data); the
+ * service contains no language-specific logic.
+ *
+ * @param {object} params
+ * @param {string} params.message - learner's newest message
+ * @param {Array<{role: 'user'|'assistant', content: string}>} [params.conversationHistory]
+ * @param {string} params.targetLanguage - required; chosen by the learner in the UI
+ * @param {string} [params.level] - beginner | intermediate | advanced
+ * @returns {Promise<{reply: string, correction: object|null, vocabulary: object[], difficulty: string}>}
  */
-export async function generateConversationResponse(userMessage, conversationHistory = []) {
+export async function generateConversationResponse({
+  message,
+  conversationHistory = [],
+  targetLanguage,
+  level,
+}) {
+  // The selected language is the source of truth; there is no default.
+  const language = normalizeTargetLanguage(targetLanguage);
+  if (!language) {
+    const error = new Error('targetLanguage is required');
+    error.isValidationError = true;
+    throw error;
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey || apiKey === 'your_api_key_here') {
@@ -20,26 +40,30 @@ export async function generateConversationResponse(userMessage, conversationHist
   }
 
   const modelName = process.env.GEMMA_MODEL || 'gemma-4-26b-a4b-it';
+  const learnerLevel = normalizeLevel(level);
+
+  // A short reminder on the newest turn keeps the JSON format reliable in long chats.
+  const latestTurn = `Learner's message (practicing ${language}):\n${message}\n\n(Reply with the JSON object only.)`;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
 
     const response = await ai.models.generateContent({
       model: modelName,
-      contents: buildContents(userMessage, conversationHistory),
+      contents: buildContents(latestTurn, conversationHistory),
       config: {
-        systemInstruction: SYSTEM_INSTRUCTION
-      }
+        systemInstruction: buildSystemInstruction({ targetLanguage: language, level: learnerLevel }),
+      },
     });
 
     if (!response || !response.text) {
       throw new Error('Gemma returned an empty or invalid response');
     }
 
-    return response.text;
+    return parseGemmaResponse(response.text, learnerLevel);
   } catch (err) {
-    if (err.isConfigError) throw err;
     console.error('Gemma Service Error:', err.message || err);
+    if (err.isParseError) throw err;
     throw new Error(`Failed to generate response from Gemma 4: ${err.message || 'API Error'}`);
   }
 }

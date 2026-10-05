@@ -8,9 +8,11 @@ LinguaBuddy is an open-source project building a supportive companion for langua
 
 ---
 
-## Current Project Status: Stage 3 — Core Conversation Engine
+## Current Project Status: Stage 4 — Universal Language Learning Intelligence
 
-> Stages 1-3 give you a working multi-turn chat with Google Gemma 4: the React client keeps the conversation, sends recent history to the Express backend, and the backend calls Gemma server-side. Corrections, language/level selection, vocabulary and summaries are **not yet implemented**.
+> LinguaBuddy is a **language-agnostic** practice partner. The learner's target language and level are sent to the backend as plain data and passed to Gemma 4, which performs the language-aware conversation, gentle corrections, vocabulary suggestions and level adaptation. There is no per-language grammar code in the app.
+>
+> The learner picks the **Language** and **Level** in selectors at the top of the app. Those selections are the source of truth and are sent with every chat request. Not yet implemented: scenario selector, session summary, progress tracking.
 
 ---
 
@@ -36,9 +38,19 @@ LinguaBuddy is an open-source project building a supportive companion for langua
 | **Backend Health Check**           | ✅ Implemented | `GET /api/health` endpoint                           |
 | **Gemma 4 AI Service Integration** | ✅ Implemented | Server-side `@google/genai`, `POST /api/chat`        |
 | **Interactive Chat Experience**    | ✅ Implemented | Multi-turn chat UI, loading/error states, New Conversation |
-| **Language / Level / Scenario Setup** | ⏳ Planned  | Choose target language, proficiency and scenario     |
-| **Gentle Language Corrections**    | ⏳ Planned     | Real-time grammar & phrasing feedback                |
+| **Gentle Corrections, Vocabulary, Adaptive Level** | ✅ Implemented | Gemma returns optional correction/vocabulary; any target language |
+| **Language & Level Selectors**     | ✅ Implemented | Choose the target language and level; sent to Gemma on every request |
+| **Scenario Selector**              | ⏳ Planned     | Choose a conversation scenario                       |
 | **Session Summary & Progress**     | ⏳ Planned     | Vocabulary review & progress tracking                |
+
+---
+
+## Multilingual Design
+
+- **Supported by architecture:** any target language Gemma can handle (for example English, Japanese, Korean, Spanish, French, German, Hindi, Bengali, Italian, Portuguese, Mandarin Chinese). The language is data (`targetLanguage`), not application logic.
+- **Actually tested:** only the languages listed in `docs/AI_DESIGN.md` under "Testing log". Support for other languages is expected but has not been individually tested.
+- **Choosing a language:** use the Language and Level selectors. No language is assumed: you choose one before chatting. Changing the language starts a new conversation; changing the level applies from the next message.
+- **Adding a language:** add one line to `client/src/config/languages.js`.
 
 ---
 
@@ -48,7 +60,9 @@ LinguaBuddy is an open-source project building a supportive companion for langua
 linguabuddy/
 ├── client/              # React + Vite frontend
 │   └── src/
-│       ├── components/  # ChatWindow, MessageBubble, ChatInput
+│       ├── components/  # ChatWindow, MessageBubble, ChatInput, CorrectionCard, VocabularyList,
+│       │                #   LanguageSelector, LevelSelector
+│       ├── config/      # languages.js (supported languages + levels)
 │       ├── services/    # chatApi.js (calls /api/chat)
 │       ├── App.jsx      # conversation state
 │       ├── main.jsx
@@ -59,7 +73,7 @@ linguabuddy/
 │       ├── services/    # gemmaService.js (Gemma 4 integration)
 │       ├── routes/      # chat.js (POST /api/chat)
 │       ├── prompts/     # languagePartner.js (system instruction)
-│       ├── utils/       # conversation.js (history handling) + tests
+│       ├── utils/       # conversation.js, learnerContext.js, gemmaResponse.js + tests
 │       └── index.js     # Express server entrypoint
 │
 ├── docs/                # PRD, ARCHITECTURE, WORKFLOW, AI_DESIGN, API
@@ -123,6 +137,12 @@ npm run test:server
 
 ```
 npm run test:smoke
+```
+
+8. Review Gemma's behaviour in several languages:
+
+```
+npm run test:languages
 ```
 
 ---
