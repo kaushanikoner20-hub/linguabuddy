@@ -46,6 +46,34 @@ LinguaBuddy is an open-source project building a supportive companion for langua
 
 ---
 
+## Screenshots
+
+### 1. Choose a language, level, and scenario
+
+![LinguaBuddy onboarding with no selections made](docs/screenshots/01-onboarding-empty.png)
+
+### 2. Configure a practice session
+
+![LinguaBuddy onboarding with Japanese, beginner, and daily life selected](docs/screenshots/02-onboarding-configured.png)
+
+### 3. Practice in a conversation
+
+![Japanese practice conversation in LinguaBuddy](docs/screenshots/03-practice-conversation.png)
+
+### 4. Review corrections and vocabulary
+
+![LinguaBuddy correction explanation and vocabulary suggestion](docs/screenshots/04-correction-and-vocabulary.png)
+
+### 5. See your session summary
+
+![LinguaBuddy session summary with strengths and corrections](docs/screenshots/05-session-summary.png)
+
+### 6. Choose an adaptive review activity
+
+![LinguaBuddy recommended review topics and local progress](docs/screenshots/06-adaptive-review.png)
+
+---
+
 ## Multilingual Design
 
 - **Supported by architecture:** any target language Gemma can handle (for example English, Japanese, Korean, Spanish, French, German, Hindi, Bengali, Italian, Portuguese, Mandarin Chinese). The language is data (`targetLanguage`), not application logic.
