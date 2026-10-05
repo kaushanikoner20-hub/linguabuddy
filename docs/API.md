@@ -16,6 +16,7 @@ Sends the learner's newest message (plus settings and recent history) to Gemma 4
     "message": "昨日、映画を見ます。",
     "targetLanguage": "Japanese",
     "level": "beginner",
+    "scenario": "travel",
     "conversationHistory": [
       { "role": "user", "content": "こんにちは！" },
       { "role": "assistant", "content": "こんにちは！お元気ですか？" }
@@ -24,7 +25,8 @@ Sends the learner's newest message (plus settings and recent history) to Gemma 4
   ```
   - `message` (string, required): non-empty, max 2000 characters, any Unicode.
   - `targetLanguage` (string, **required**): the language the learner selected in the UI. Any language name in any script (`"Japanese"`, `"日本語"`, `"Português (Brasil)"`). Treated as data and passed to Gemma; cleaned and limited to 40 characters. It is the source of truth: the AI never changes it based on what the learner types.
-  - `level` (optional): `beginner` | `intermediate` | `advanced`, from the level selector. A missing or invalid value is treated as `beginner`.
+  - `level` (required): `beginner` | `intermediate` | `advanced`, from the level selector.
+  - `scenario` (required): one of `free-conversation`, `travel`, `restaurant`, `job-interview`, `daily-life`, or `shopping`. The server maps this ID to contextual guidance for Gemma.
   - `conversationHistory` (array, optional): earlier messages, oldest first, `{ role: "user" | "assistant", content }`. Invalid items are ignored; the most recent 12 are used.
   - There is **no default language**. A request without `targetLanguage` is rejected with `400`.
 
@@ -51,10 +53,9 @@ Sends the learner's newest message (plus settings and recent history) to Gemma 4
   - `difficulty` is `beginner`, `intermediate` or `advanced`.
   - Malformed optional parts from Gemma are dropped instead of causing errors.
 - **Errors** (`{ "error": "<friendly message>" }`, never stack traces or keys):
-  - `400` - message missing, empty, or too long, or `targetLanguage` missing.
+  - `400` - message missing, empty, or too long; target language missing; or invalid level/scenario.
   - `500` - AI service not configured, Gemma failed, or Gemma returned no usable reply.
 
 ## Planned (Not Implemented Yet)
 
-- `scenario` request field and selector.
 - `POST /api/session-summary`: end-of-session summary, key vocabulary, strengths and areas to practice.

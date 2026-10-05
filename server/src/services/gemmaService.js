@@ -2,7 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { buildSystemInstruction } from '../prompts/languagePartner.js';
 import { buildContents } from '../utils/Conversation.js';
 import { parseGemmaResponse } from '../utils/Gemmaresponse.js';
-import { normalizeLevel, normalizeTargetLanguage } from '../utils/learnerContext.js';
+import { normalizeLevel, normalizeScenario, normalizeTargetLanguage, SCENARIOS } from '../utils/learnerContext.js';
 
 /**
  * Generates a language-aware conversation response using Google Gemma 4.
@@ -21,11 +21,19 @@ export async function generateConversationResponse({
   conversationHistory = [],
   targetLanguage,
   level,
+  scenario,
 }) {
   // The selected language is the source of truth; there is no default.
   const language = normalizeTargetLanguage(targetLanguage);
   if (!language) {
     const error = new Error('targetLanguage is required');
+    error.isValidationError = true;
+    throw error;
+  }
+
+  const scenarioId = normalizeScenario(scenario);
+  if (!scenarioId) {
+    const error = new Error('scenario is required or invalid');
     error.isValidationError = true;
     throw error;
   }
@@ -52,7 +60,7 @@ export async function generateConversationResponse({
       model: modelName,
       contents: buildContents(latestTurn, conversationHistory),
       config: {
-        systemInstruction: buildSystemInstruction({ targetLanguage: language, level: learnerLevel }),
+        systemInstruction: buildSystemInstruction({ targetLanguage: language, level: learnerLevel, scenario: SCENARIOS[scenarioId] }),
       },
     });
 

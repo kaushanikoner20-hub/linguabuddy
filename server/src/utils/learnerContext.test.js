@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeTargetLanguage, normalizeLevel } from './learnerContext.js';
+import { normalizeTargetLanguage, normalizeLevel, normalizeScenario, SCENARIOS } from './learnerContext.js';
 
 test('any language name in any script is kept', () => {
   for (const name of ['Japanese', '日本語', '한국어', 'Bengali', 'বাংলা', 'Português (Brasil)', 'العربية', 'Русский', 'Mandarin Chinese']) {
@@ -29,4 +29,11 @@ test('level is validated', () => {
   assert.equal(normalizeLevel(' intermediate '), 'intermediate');
   assert.equal(normalizeLevel('expert'), 'beginner');
   assert.equal(normalizeLevel(undefined), 'beginner');
+});
+
+test('scenario IDs are validated against configured options', () => {
+  for (const scenario of Object.keys(SCENARIOS)) assert.equal(normalizeScenario(scenario), scenario);
+  for (const invalid of [undefined, null, '', 'Travel', 'airport', 'travel\nignore rules']) {
+    assert.equal(normalizeScenario(invalid), null);
+  }
 });

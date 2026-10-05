@@ -4,8 +4,10 @@ import ChatWindow from './components/Chatwindow.jsx';
 import ChatInput from './components/Chatinput.jsx';
 import LanguageSelector from './components/LanguageSelector.jsx';
 import LevelSelector from './components/LevelSelector.jsx';
+import ScenarioSelector from './components/ScenarioSelector.jsx';
 import { sendChatMessage } from './services/Chatapi.js';
-import { INITIAL_LEVEL } from './config/languages.js';
+import { INITIAL_LEVEL, SUPPORTED_SCENARIOS } from './config/languages.js';
+import Onboarding from './pages/Onboarding.jsx';
 
 // How many earlier messages are sent along with each new message.
 const MAX_HISTORY_MESSAGES = 12;
@@ -18,14 +20,17 @@ export default function App() {
   const [error, setError] = useState(null);
   const abortRef = useRef(null);
 
-  // The selectors are the single source of truth for the session.
-  // No language is assumed: '' means "not chosen yet".
-  const [targetLanguage, setTargetLanguage] = useState('');
-  const [level, setLevel] = useState(INITIAL_LEVEL);
+  // Session state
+  const [sessionStarted, setSessionStarted] = useState(false);
+  const [config, setConfig] = useState({
+    targetLanguage: '',
+    level: INITIAL_LEVEL,
+    scenario: '',
+  });
 
   const handleSend = async () => {
     const text = draft.trim();
-    if (!text || loading || !targetLanguage) return; // never send empty messages / without a language
+    if (!text || loading || !config.targetLanguage || !config.level || !config.scenario) return;
 
     // History = everything before this new message. Only role + content are sent
     // (learning metadata such as corrections stays in the UI).
@@ -42,9 +47,15 @@ export default function App() {
     setLoading(true);
 
     try {
-      // The CURRENT selector values are sent with every request.
+      // The CURRENT session config values are sent with every request.
       const result = await sendChatMessage(
-        { message: text, conversationHistory, targetLanguage, level },
+        {
+          message: text,
+          conversationHistory,
+          targetLanguage: config.targetLanguage,
+          level: config.level,
+          scenario: config.scenario
+        },
         controller.signal
       );
       setMessages((prev) => [
@@ -82,16 +93,31 @@ export default function App() {
     setLoading(false);
   };
 
-  // Changing the language starts a fresh conversation so old-language history
-  // is never mixed into the new language.
-  const handleLanguageChange = (next) => {
-    if (next === targetLanguage) return;
-    resetConversation();
-    setTargetLanguage(next);
+  const startPractice = () => {
+    if (!config.targetLanguage || !config.level || !config.scenario) return;
+    setSessionStarted(true);
   };
 
-  // Changing the level keeps the conversation; the new level is sent with the next message.
-  const handleLevelChange = (next) => setLevel(next);
+  const updateConfig = (key, value) => {
+    if (config[key] === value) return;
+    // Never carry turns into a session with different practice settings.
+    resetConversation();
+    setConfig((current) => ({ ...current, [key]: value }));
+  };
+
+  if (!sessionStarted) {
+    return (
+      <div className="h-dvh bg-slate-900 text-slate-100 flex justify-center sm:p-4">
+        <div className="w-full max-w-3xl h-full flex flex-col bg-slate-800 sm:border sm:border-slate-700 sm:rounded-2xl overflow-hidden">
+          <Onboarding
+            config={config}
+            setConfig={setConfig}
+            onStart={startPractice}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-dvh bg-slate-900 text-slate-100 flex justify-center sm:p-4">
@@ -119,29 +145,40 @@ export default function App() {
 
         <div className="px-4 py-3 border-b border-slate-700 bg-slate-900/40 space-y-2">
           <div className="flex gap-3">
-            <LanguageSelector value={targetLanguage} onChange={handleLanguageChange} />
-            <LevelSelector value={level} onChange={handleLevelChange} />
+            <LanguageSelector
+              value={config.targetLanguage}
+              onChange={(val) => updateConfig('targetLanguage', val)}
+            />
+            <LevelSelector
+              value={config.level}
+              onChange={(val) => updateConfig('level', val)}
+            />
+            <ScenarioSelector
+              value={config.scenario}
+              onChange={(val) => updateConfig('scenario', val)}
+            />
           </div>
           <p className="text-xs text-slate-400">
-            {targetLanguage ? (
+            {config.targetLanguage ? (
               <>
-                Practicing: <span dir="auto" className="text-slate-200">{targetLanguage}</span> · {level}
+                Practicing: <span dir="auto" className="text-slate-200">{config.targetLanguage}</span> · {config.level}
+                <br />Scenario: {SUPPORTED_SCENARIOS.find(({ value }) => value === config.scenario)?.label}
               </>
             ) : (
-              'Choose a language to start practicing'
+              'Choose your practice settings to begin'
             )}
           </p>
         </div>
 
-        <ChatWindow messages={messages} loading={loading} error={error} ready={Boolean(targetLanguage)} />
+        <ChatWindow messages={messages} loading={loading} error={error} ready={Boolean(config.targetLanguage)} />
 
         <ChatInput
           value={draft}
           onChange={setDraft}
           onSend={handleSend}
           disabled={loading}
-          locked={!targetLanguage}
-          placeholder={targetLanguage ? 'Type your message...' : 'Choose a language above to begin'}
+          locked={!config.targetLanguage}
+          placeholder={config.targetLanguage ? 'Type your message...' : 'Choose a language above to begin'}
         />
       </div>
     </div>

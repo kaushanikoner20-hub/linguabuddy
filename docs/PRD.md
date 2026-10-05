@@ -9,8 +9,8 @@ Language learners often struggle to transition from vocabulary apps to real-worl
 
 ## 3. Target User
 - **Primary Persona:** A real friend learning a new language who needs a supportive, low-pressure environment to practice speaking and writing.
-- **Target Language:** `[TARGET LANGUAGE TO BE CONFIRMED]`
-- **Current Proficiency Level:** `[PROFICIENCY LEVEL TO BE CONFIRMED - e.g., Beginner (A2) / Intermediate (B1)]`
+- **Target Language:** Learner-selected from the language selector.
+- **Current Proficiency Level:** Learner-selected Beginner, Intermediate, or Advanced.
 - **User Goals:** Build conversational confidence, receive immediate yet friendly corrections, expand vocabulary, and practice realistic scenarios.
 
 ## 4. Product Goal
@@ -25,11 +25,14 @@ To provide a friendly, patient, and context-aware AI partner powered by Google G
 
 ## 6. Scope & Features
 
-### MVP Features (Planned for Future Stages)
+### Implemented Through Stage 5
 - Language and proficiency selector.
 - Practice scenario selection.
+- No-login onboarding before practice; no personal information is collected.
 - Natural AI conversation powered by Google Gemma 4.
 - Gentle inline language correction and short explanations.
+
+### Planned
 - End-of-session summary and vocabulary key takeaways.
 - Lightweight practice progress tracking.
 

@@ -18,7 +18,7 @@ const LEVEL_GUIDANCE = {
 - Use richer vocabulary and avoid over-explaining. Point out subtle improvements (naturalness, register, word choice) only when they matter.`,
 };
 
-export function buildSystemInstruction({ targetLanguage, level, supportLanguage = SUPPORT_LANGUAGE }) {
+export function buildSystemInstruction({ targetLanguage, level, scenario, supportLanguage = SUPPORT_LANGUAGE }) {
   const guidance = LEVEL_GUIDANCE[level] || LEVEL_GUIDANCE.beginner;
   const sameLanguage = targetLanguage.toLowerCase() === supportLanguage.toLowerCase();
 
@@ -31,6 +31,8 @@ export function buildSystemInstruction({ targetLanguage, level, supportLanguage 
 
 The learner is practicing: ${targetLanguage}
 The learner's approximate proficiency: ${level}
+Practice scenario: ${scenario.label}
+Scenario guidance: ${scenario.guidance}
 
 Your job is to keep a natural conversation going in ${targetLanguage} while helping the learner understand and improve. The conversation is the PRIMARY output; learning help is SECONDARY.
 
@@ -61,6 +63,7 @@ LANGUAGES
 ${supportRules}
 - Quote the learner's original text exactly as written (any script).
 - The target language (${targetLanguage}) and level were chosen by the learner in the app's selectors and are fixed for this session. You can practice ANY language with learners; never say you can only teach one language.
+- Keep the role-play and follow-up questions relevant to the selected scenario. Treat its guidance as context, not a rigid script.
 - Never change the target language because of what the learner types. If the learner asks to practice a different language, kindly tell them (in simple ${supportLanguage}) to change the Language selector in the app, then carry on in ${targetLanguage}.
 - If the learner says they want to learn ${targetLanguage}, simply begin or continue the practice.
 

@@ -1,7 +1,7 @@
 import express from 'express';
 import { generateConversationResponse } from '../services/gemmaService.js';
 import { MAX_MESSAGE_LENGTH } from '../utils/Conversation.js';
-import { normalizeTargetLanguage } from '../utils/learnerContext.js';
+import { LEVELS, normalizeScenario, normalizeTargetLanguage } from '../utils/learnerContext.js';
 
 const router = express.Router();
 
@@ -9,14 +9,15 @@ const router = express.Router();
 // Body: {
 //   message: string,
 //   targetLanguage: string,         // required; any language name, treated as data
-//   level?: 'beginner' | 'intermediate' | 'advanced',
+//   level: 'beginner' | 'intermediate' | 'advanced',
+//   scenario: configured scenario ID,
 //   conversationHistory?: [{ role: 'user'|'assistant', content: string }]
 // }
 // Returns: { reply, correction: {original, corrected, explanation} | null,
 //            vocabulary: [{word, meaning, example}], difficulty }
 router.post('/chat', async (req, res) => {
   try {
-    const { message, conversationHistory, targetLanguage, level } = req.body || {};
+    const { message, conversationHistory, targetLanguage, level, scenario } = req.body || {};
 
     if (!message || typeof message !== 'string' || message.trim() === '') {
       return res.status(400).json({
@@ -36,11 +37,20 @@ router.post('/chat', async (req, res) => {
       });
     }
 
+    if (typeof level !== 'string' || !LEVELS.includes(level)) {
+      return res.status(400).json({ error: 'Choose a valid proficiency level.' });
+    }
+
+    if (!normalizeScenario(scenario)) {
+      return res.status(400).json({ error: 'Choose a valid practice scenario.' });
+    }
+
     const result = await generateConversationResponse({
       message: message.trim(),
       conversationHistory,
       targetLanguage,
       level,
+      scenario,
     });
 
     return res.status(200).json(result);
@@ -50,7 +60,7 @@ router.post('/chat', async (req, res) => {
 
     if (error.isValidationError) {
       return res.status(400).json({
-        error: 'targetLanguage is required. Choose a language to practice.'
+        error: 'Choose valid language, level, and scenario settings.'
       });
     }
 

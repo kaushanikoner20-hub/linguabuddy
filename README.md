@@ -8,11 +8,11 @@ LinguaBuddy is an open-source project building a supportive companion for langua
 
 ---
 
-## Current Project Status: Stage 4 — Universal Language Learning Intelligence
+## Current Project Status: Stage 5 — Language, Level & Scenario Setup
 
 > LinguaBuddy is a **language-agnostic** practice partner. The learner's target language and level are sent to the backend as plain data and passed to Gemma 4, which performs the language-aware conversation, gentle corrections, vocabulary suggestions and level adaptation. There is no per-language grammar code in the app.
 >
-> The learner picks the **Language** and **Level** in selectors at the top of the app. Those selections are the source of truth and are sent with every chat request. Not yet implemented: scenario selector, session summary, progress tracking.
+> Before chatting, the learner chooses a **Language**, **Level**, and **Scenario** in a no-login onboarding screen. One session configuration is sent with each request; changing a setting clears the current conversation. Gemma adapts its multilingual conversation, corrections, and vocabulary to the configuration. Session summaries and progress tracking are not implemented yet.
 
 ---
 
@@ -40,7 +40,7 @@ LinguaBuddy is an open-source project building a supportive companion for langua
 | **Interactive Chat Experience**    | ✅ Implemented | Multi-turn chat UI, loading/error states, New Conversation |
 | **Gentle Corrections, Vocabulary, Adaptive Level** | ✅ Implemented | Gemma returns optional correction/vocabulary; any target language |
 | **Language & Level Selectors**     | ✅ Implemented | Choose the target language and level; sent to Gemma on every request |
-| **Scenario Selector**              | ⏳ Planned     | Choose a conversation scenario                       |
+| **Scenario Selector & Onboarding** | ✅ Implemented | Choose language, level, and scenario before chat; scenario guides Gemma |
 | **Session Summary & Progress**     | ⏳ Planned     | Vocabulary review & progress tracking                |
 
 ---
@@ -48,8 +48,8 @@ LinguaBuddy is an open-source project building a supportive companion for langua
 ## Multilingual Design
 
 - **Supported by architecture:** any target language Gemma can handle (for example English, Japanese, Korean, Spanish, French, German, Hindi, Bengali, Italian, Portuguese, Mandarin Chinese). The language is data (`targetLanguage`), not application logic.
-- **Actually tested:** only the languages listed in `docs/AI_DESIGN.md` under "Testing log". Support for other languages is expected but has not been individually tested.
-- **Choosing a language:** use the Language and Level selectors. No language is assumed: you choose one before chatting. Changing the language starts a new conversation; changing the level applies from the next message.
+- **Verification:** unit tests cover Unicode language handling. Live multilingual replies require the Google API to be reachable; see the verification notes in `docs/AI_DESIGN.md`.
+- **Choosing practice settings:** select language, level, and scenario before starting. No language is assumed and no account is required. Changing any setting during practice clears the conversation.
 - **Adding a language:** add one line to `client/src/config/languages.js`.
 
 ---
@@ -60,9 +60,9 @@ LinguaBuddy is an open-source project building a supportive companion for langua
 linguabuddy/
 ├── client/              # React + Vite frontend
 │   └── src/
-│       ├── components/  # ChatWindow, MessageBubble, ChatInput, CorrectionCard, VocabularyList,
-│       │                #   LanguageSelector, LevelSelector
-│       ├── config/      # languages.js (supported languages + levels)
+│       ├── components/  # chat, learning feedback and language/level/scenario selectors
+│       ├── pages/       # onboarding before practice
+│       ├── config/      # languages.js (languages, levels and scenarios)
 │       ├── services/    # chatApi.js (calls /api/chat)
 │       ├── App.jsx      # conversation state
 │       ├── main.jsx
@@ -133,17 +133,6 @@ curl http://localhost:5000/api/health
 npm run test:server
 ```
 
-7. With the server running (and your key set), run the end-to-end smoke test:
-
-```
-npm run test:smoke
-```
-
-8. Review Gemma's behaviour in several languages:
-
-```
-npm run test:languages
-```
 
 ---
 

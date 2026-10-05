@@ -10,7 +10,7 @@ const SERVER_ERROR =
  * AbortError is re-thrown unchanged so the caller can ignore cancelled requests.
  */
 export async function sendChatMessage(
-  { message, conversationHistory, targetLanguage, level },
+  { message, conversationHistory, targetLanguage, level, scenario },
   signal
 ) {
   let res;
@@ -18,7 +18,7 @@ export async function sendChatMessage(
     res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, conversationHistory, targetLanguage, level }),
+      body: JSON.stringify({ message, conversationHistory, targetLanguage, level, scenario }),
       signal,
     });
   } catch (err) {

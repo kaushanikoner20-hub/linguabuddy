@@ -22,6 +22,15 @@ export const LEVELS = [
   { value: 'advanced', label: 'Advanced' },
 ];
 
+export const SUPPORTED_SCENARIOS = [
+  { value: 'free-conversation', label: 'Free Conversation' },
+  { value: 'travel', label: 'Travel' },
+  { value: 'restaurant', label: 'Restaurant' },
+  { value: 'job-interview', label: 'Job Interview' },
+  { value: 'daily-life', label: 'Daily Life' },
+  { value: 'shopping', label: 'Shopping' },
+];
+
 // The level selector starts here. (There is deliberately NO default language:
 // the learner must choose one, so no language is ever silently assumed.)
 export const INITIAL_LEVEL = 'beginner';
