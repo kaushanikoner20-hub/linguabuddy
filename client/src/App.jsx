@@ -8,8 +8,9 @@ import ScenarioSelector from './components/ScenarioSelector.jsx';
 import { requestSessionSummary, sendChatMessage } from './services/Chatapi.js';
 import { INITIAL_LEVEL, SUPPORTED_SCENARIOS } from './config/languages.js';
 import Onboarding from './pages/Onboarding.jsx';
-import SessionSummary from './pages/SessionSummary.jsx';
+import SessionSummary from './pages/SessionSummaryReview.jsx';
 import {
+  addReviewActivityToProgress,
   addSessionToProgress,
   getSessionMetrics,
   makeFallbackSummary,
@@ -201,6 +202,11 @@ export default function App() {
             progress={progress}
             onPracticeAgain={startFreshPractice}
             onChangeSettings={returnToSettings}
+            onReviewComplete={(topic) => {
+              const nextProgress = addReviewActivityToProgress(readLocalProgress(), topic);
+              saveLocalProgress(nextProgress);
+              setProgress(nextProgress);
+            }}
           />
         </div>
       </div>

@@ -10,7 +10,7 @@
     "dev:server": "npm run dev --prefix server",
     "build:client": "npm run build --prefix client",
     "start:server": "npm start --prefix server",
-    "test:server": "node --test server/src/utils/conversation.test.js server/src/utils/learnerContext.test.js server/src/utils/gemmaResponse.test.js server/src/utils/sessionSummary.test.js server/src/prompts/languagePartner.test.js",
+    "test:server": "node --test server/src/utils/conversation.test.js server/src/utils/learnerContext.test.js server/src/utils/gemmaResponse.test.js server/src/utils/sessionSummary.test.js server/src/utils/reviewActivity.test.js server/src/prompts/languagePartner.test.js",
     "test:session": "node --test client/src/utils/session.test.js",
     "test:smoke": "node server/scripts/smoke-test.js",
     "test:languages": "node server/scripts/language-test.js"

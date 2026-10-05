@@ -1,9 +1,10 @@
 import { GoogleGenAI } from '@google/genai';
-import { buildSummaryInstruction, buildSystemInstruction } from '../prompts/languagePartner.js';
+import { buildReviewActivityInstruction, buildSummaryInstruction, buildSystemInstruction } from '../prompts/languagePartner.js';
 import { buildContents } from '../utils/Conversation.js';
 import { parseGemmaResponse } from '../utils/Gemmaresponse.js';
 import { normalizeLevel, normalizeScenario, normalizeTargetLanguage, SCENARIOS } from '../utils/learnerContext.js';
 import { buildFallbackSummary, parseSessionSummary, sanitizeSummaryInputs } from '../utils/sessionSummary.js';
+import { parseReviewActivity } from '../utils/reviewActivity.js';
 
 /**
  * Generates a language-aware conversation response using Google Gemma 4.
@@ -114,5 +115,56 @@ export async function generateSessionSummary({ targetLanguage, level, scenario, 
     // Log provider details on the server; return a useful local summary to the learner.
     console.error('Gemma Summary Error:', error.message || error);
     return fallback;
+  }
+}
+
+export async function generateReviewActivity({ targetLanguage, level, scenario, mode, insight, corrections, vocabulary }) {
+  const language = normalizeTargetLanguage(targetLanguage);
+  const scenarioId = normalizeScenario(scenario);
+  if (!language || !scenarioId || !['beginner', 'intermediate', 'advanced'].includes(level)) {
+    const error = new Error('Invalid review activity configuration');
+    error.isValidationError = true;
+    throw error;
+  }
+  if (!['mistakes', 'vocabulary', 'weak-area'].includes(mode) || !insight?.topic || !insight?.reason) {
+    const error = new Error('Invalid review topic');
+    error.isValidationError = true;
+    throw error;
+  }
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || apiKey === 'your_api_key_here') {
+    const error = new Error('AI service is not configured');
+    error.isConfigError = true;
+    throw error;
+  }
+  const modelName = process.env.GEMMA_MODEL || 'gemma-4-26b-a4b-it';
+  const session = sanitizeSummaryInputs({ corrections, vocabulary });
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: modelName,
+      contents: 'Create one short multiple-choice review activity as valid JSON.',
+      config: {
+        systemInstruction: buildReviewActivityInstruction({
+          targetLanguage: language,
+          level,
+          scenario: SCENARIOS[scenarioId],
+          mode,
+          insight: { topic: String(insight.topic).slice(0, 100), reason: String(insight.reason).slice(0, 220) },
+          ...session,
+        }),
+        httpOptions: { timeout: 30000 },
+      },
+    });
+    const activity = parseReviewActivity(response?.text);
+    if (!activity) {
+      const error = new Error('Gemma returned an invalid review activity');
+      error.isParseError = true;
+      throw error;
+    }
+    return activity;
+  } catch (error) {
+    console.error('Gemma Review Activity Error:', error.message || error);
+    throw error.isParseError ? error : new Error('Review activity generation failed');
   }
 }

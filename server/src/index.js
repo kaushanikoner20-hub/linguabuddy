@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import chatRouter from './routes/chat.js';
 import sessionSummaryRouter from './routes/sessionSummary.js';
+import reviewActivityRouter from './routes/reviewActivity.js';
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.get('/api/health', (req, res) => {
 // Chat API Routes (Stage 2 - Gemma 4 Integration)
 app.use('/api', chatRouter);
 app.use('/api', sessionSummaryRouter);
+app.use('/api', reviewActivityRouter);
 
 // Global Error Middleware
 app.use((err, req, res, next) => {

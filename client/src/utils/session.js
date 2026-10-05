@@ -5,6 +5,8 @@ const emptyProgress = () => ({
   totalPracticeMessages: 0,
   totalCorrections: 0,
   totalVocabulary: 0,
+  reviewActivitiesCompleted: 0,
+  topicsPracticed: [],
 });
 
 export function collectSessionLearning(messages) {
@@ -66,6 +68,10 @@ export function makeFallbackSummary({ config, scenarioLabel, metrics }) {
         : [],
     corrections: metrics.corrections,
     vocabulary: metrics.vocabulary,
+    insights: [
+      ...(metrics.corrections.length ? [{ category: 'grammar', topic: 'Review your recent corrections', reason: 'These forms were corrected during this session, so they may be useful to revisit.', priority: 'medium' }] : []),
+      ...(metrics.vocabulary.length ? [{ category: 'vocabulary', topic: 'Practice session vocabulary', reason: 'These words came up during this session and are ready for another practice round.', priority: 'medium' }] : []),
+    ].slice(0, 3),
     fallback: true,
   };
 }
@@ -74,6 +80,10 @@ function normalizeProgress(value) {
   const base = emptyProgress();
   if (!value || typeof value !== 'object' || Array.isArray(value)) return base;
   for (const key of Object.keys(base)) {
+    if (key === 'topicsPracticed') {
+      base.topicsPracticed = Array.isArray(value[key]) ? [...new Set(value[key].filter((topic) => typeof topic === 'string' && topic.trim()).map((topic) => topic.trim().slice(0, 100)))].slice(0, 20) : [];
+      continue;
+    }
     const number = Number(value[key]);
     base[key] = Number.isSafeInteger(number) && number >= 0 ? number : 0;
   }
@@ -92,10 +102,21 @@ export function readLocalProgress(storage) {
 export function addSessionToProgress(progress, metrics) {
   const current = normalizeProgress(progress);
   return {
+    ...current,
     sessionsCompleted: current.sessionsCompleted + 1,
     totalPracticeMessages: current.totalPracticeMessages + metrics.learnerMessages,
     totalCorrections: current.totalCorrections + metrics.correctionCount,
     totalVocabulary: current.totalVocabulary + metrics.vocabularyCount,
+  };
+}
+
+export function addReviewActivityToProgress(progress, topic) {
+  const current = normalizeProgress(progress);
+  const cleanTopic = typeof topic === 'string' ? topic.trim().slice(0, 100) : '';
+  return {
+    ...current,
+    reviewActivitiesCompleted: current.reviewActivitiesCompleted + 1,
+    topicsPracticed: cleanTopic ? [cleanTopic, ...current.topicsPracticed.filter((item) => item.toLocaleLowerCase() !== cleanTopic.toLocaleLowerCase())].slice(0, 20) : current.topicsPracticed,
   };
 }
 

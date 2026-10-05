@@ -27,8 +27,9 @@ This document describes the current no-login practice and session-summary flow.
     │
 11. Continue Conversation (Repeat steps 6-10)
     │
-12. End Session requests a summary; aggregate progress is updated locally
-13. Practice Again starts a clean session with the same configuration, or Change Settings returns to setup
+12. End Session requests a summary and up to three evidence-based review insights
+13. Learner may choose a mistake, vocabulary, or suggested-area review; Gemma generates one short activity
+14. Learner answers for immediate feedback, then starts a clean new practice session or changes settings
 ```
 
 ## Detailed Step Description
@@ -45,6 +46,7 @@ This document describes the current no-login practice and session-summary flow.
 10. **Frontend Display:** UI presents AI reply clearly, emphasizing learning points.
 11. **Conversation Loop:** Smooth multi-turn practice session.
 12. **End Session:** The client sends at most the latest 12 turns plus actual session corrections/vocabulary to `POST /api/session-summary`. The summary includes an overview, evidence-based strengths and improvements, corrections, vocabulary, and temporary session stats.
-13. **Progress and next session:** Only aggregate totals are written to browser localStorage. Practice Again clears session data while retaining language, level, and scenario; Change Settings returns to setup.
+13. **Optional review:** Review is never forced. A chosen topic and existing learning records are sent to Gemma with the same target language, level, and scenario. The server validates a structured three-choice activity; answer matching is deterministic and no language-specific grammar engine is used.
+14. **Progress and next session:** Aggregate session/review totals and up to 20 short topic labels are written to browser localStorage. Starting new practice clears session data while retaining settings; Change Settings returns to setup.
 
-Session messages, metrics, corrections, and vocabulary exist only in frontend session state. They are discarded when the learner starts another session or returns to setup. Aggregate progress is local to the current browser and is not sent to analytics services.
+Session messages, metrics, corrections, vocabulary, and insights exist only in frontend session state. They are discarded when the learner starts another session or returns to setup. Only small aggregate progress is local to the current browser and is not sent to analytics services.

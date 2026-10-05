@@ -78,6 +78,28 @@ export async function requestSessionSummary(payload, signal) {
     improvements: Array.isArray(data.improvements) ? data.improvements : [],
     corrections: Array.isArray(data.corrections) ? data.corrections : [],
     vocabulary: Array.isArray(data.vocabulary) ? data.vocabulary : [],
+    insights: Array.isArray(data.insights) ? data.insights.slice(0, 3) : [],
     fallback: Boolean(data.fallback),
   };
+}
+
+export async function requestReviewActivity(payload, signal) {
+  let response;
+  try {
+    response = await fetch('/api/review-activity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal,
+    });
+  } catch (error) {
+    if (error.name === 'AbortError') throw error;
+    throw new Error(NETWORK_ERROR);
+  }
+  let data;
+  try { data = await response.json(); } catch { throw new Error(SERVER_ERROR); }
+  if (!response.ok || !data || typeof data.question !== 'string' || !Array.isArray(data.options) || data.options.length !== 3 || typeof data.expectedAnswer !== 'string') {
+    throw new Error(typeof data?.error === 'string' ? data.error : SERVER_ERROR);
+  }
+  return data;
 }

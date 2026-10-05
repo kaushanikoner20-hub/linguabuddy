@@ -47,6 +47,10 @@ export function buildFallbackSummary({ scenario, conversationHistory = [], corre
         : [],
     corrections,
     vocabulary,
+    insights: [
+      ...(corrections.length ? [{ category: 'grammar', topic: 'Review your recent corrections', reason: 'These forms were corrected during this session, so they may be useful to revisit.', priority: 'medium' }] : []),
+      ...(vocabulary.length ? [{ category: 'vocabulary', topic: 'Practice session vocabulary', reason: 'These words came up during this session and are ready for another practice round.', priority: 'medium' }] : []),
+    ].slice(0, 3),
     fallback: true,
   };
 }
@@ -67,6 +71,15 @@ export function parseSessionSummary(rawText, fallback) {
     ? value.map((item) => clip(item, 300)).filter(Boolean).slice(0, 3)
     : [];
 
+  const allowedCategories = new Set(['grammar', 'vocabulary', 'sentence formation', 'fluency', 'comprehension', 'word choice', 'confidence', 'pronunciation/text accuracy']);
+  const insights = Array.isArray(parsed.insights) ? parsed.insights.slice(0, 3).flatMap((item) => {
+    if (!item || typeof item !== 'object' || !allowedCategories.has(String(item.category || '').toLowerCase())) return [];
+    const topic = clip(item.topic, 100);
+    const reason = clip(item.reason, 220);
+    const priority = ['low', 'medium', 'high'].includes(item.priority) ? item.priority : 'medium';
+    return topic && reason ? [{ category: String(item.category).toLowerCase(), topic, reason, priority }] : [];
+  }) : fallback.insights;
+
   return {
     overview,
     strengths: list(parsed.strengths),
@@ -74,6 +87,7 @@ export function parseSessionSummary(rawText, fallback) {
     // Preserve only items supplied from the completed chat; never trust new AI facts here.
     corrections: fallback.corrections,
     vocabulary: fallback.vocabulary,
+    insights,
     fallback: false,
   };
 }

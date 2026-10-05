@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   addSessionToProgress,
+  addReviewActivityToProgress,
   getSessionMetrics,
   makeFallbackSummary,
   readLocalProgress,
@@ -44,7 +45,16 @@ test('progress is aggregate-only and storage failures are safe', () => {
     totalPracticeMessages: 3,
     totalCorrections: 1,
     totalVocabulary: 2,
+    reviewActivitiesCompleted: 0,
+    topicsPracticed: [],
   });
+  const afterReview = addReviewActivityToProgress(readLocalProgress(storage), 'Travel vocabulary');
+  assert.equal(afterReview.reviewActivitiesCompleted, 1);
+  assert.deepEqual(afterReview.topicsPracticed, ['Travel vocabulary']);
+  assert.equal(saveLocalProgress(afterReview, storage), true);
+  const afterNextSession = addSessionToProgress(afterReview, metrics);
+  assert.equal(afterNextSession.reviewActivitiesCompleted, 1);
+  assert.deepEqual(afterNextSession.topicsPracticed, ['Travel vocabulary']);
   assert.equal(readLocalProgress({ getItem: () => '{bad json' }).sessionsCompleted, 0);
   assert.equal(saveLocalProgress(updated, { setItem: () => { throw new Error('blocked'); } }), false);
 });

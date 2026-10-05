@@ -93,6 +93,15 @@ Requests one end-of-session summary using the same server-side Gemma model. The 
 
 - **Errors:** invalid configuration returns `400`. Provider/parse failures return the local fallback instead of exposing provider details.
 
-## Planned (Not Implemented Yet)
+### `POST /api/review-activity`
 
-- Future stages based on learner feedback.
+Generates one short multiple-choice activity only after the learner selects a review action. Uses the existing Gemma model and the active Stage 5 configuration; no activity or learner profile is persisted.
+
+- **Request Body:** `targetLanguage`, `level`, and `scenario` use the same validation as `/api/chat`; `mode` is `mistakes`, `vocabulary`, or `weak-area`; `insight` contains a short `category`, `topic`, and `reason`; `corrections` and `vocabulary` are bounded optional session records.
+- **Response `200 OK`:** `{ "activityType": "fill_blank", "topic": "...", "instruction": "...", "question": "...", "options": ["...", "...", "..."], "expectedAnswer": "...", "explanation": "..." }`.
+- **Validation:** the server accepts only correction practice, fill-in-the-blank, or vocabulary activity types, three distinct non-empty options, and an expected answer that exactly matches an option. Malformed output produces a safe `503` response.
+- **Answer checking:** the client checks the selected option deterministically and shows the explanation; no language-specific validator or additional model call is made.
+
+## Privacy
+
+Only aggregate review counts and up to 20 short topic labels are added to browser localStorage. Conversations and activity answers are temporary. No accounts, database, remote analytics, or learner profiling are added.
