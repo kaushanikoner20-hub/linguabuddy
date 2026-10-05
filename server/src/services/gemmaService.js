@@ -1,8 +1,9 @@
 import { GoogleGenAI } from '@google/genai';
-import { buildSystemInstruction } from '../prompts/languagePartner.js';
+import { buildSummaryInstruction, buildSystemInstruction } from '../prompts/languagePartner.js';
 import { buildContents } from '../utils/Conversation.js';
 import { parseGemmaResponse } from '../utils/Gemmaresponse.js';
 import { normalizeLevel, normalizeScenario, normalizeTargetLanguage, SCENARIOS } from '../utils/learnerContext.js';
+import { buildFallbackSummary, parseSessionSummary, sanitizeSummaryInputs } from '../utils/sessionSummary.js';
 
 /**
  * Generates a language-aware conversation response using Google Gemma 4.
@@ -73,5 +74,45 @@ export async function generateConversationResponse({
     console.error('Gemma Service Error:', err.message || err);
     if (err.isParseError) throw err;
     throw new Error(`Failed to generate response from Gemma 4: ${err.message || 'API Error'}`);
+  }
+}
+
+export async function generateSessionSummary({ targetLanguage, level, scenario, conversationHistory, corrections, vocabulary }) {
+  const language = normalizeTargetLanguage(targetLanguage);
+  const scenarioId = normalizeScenario(scenario);
+  if (!language || !scenarioId || !['beginner', 'intermediate', 'advanced'].includes(level)) {
+    const error = new Error('Invalid session summary configuration');
+    error.isValidationError = true;
+    throw error;
+  }
+
+  const session = sanitizeSummaryInputs({ conversationHistory, corrections, vocabulary });
+  const fallback = buildFallbackSummary({ scenario: scenarioId, ...session });
+  if (!session.conversationHistory.some(({ role }) => role === 'user')) return fallback;
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || apiKey === 'your_api_key_here') return fallback;
+
+  const modelName = process.env.GEMMA_MODEL || 'gemma-4-26b-a4b-it';
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: modelName,
+      contents: 'Write the requested concise session summary as JSON.',
+      config: {
+        systemInstruction: buildSummaryInstruction({
+          targetLanguage: language,
+          level,
+          scenario: SCENARIOS[scenarioId],
+          ...session,
+        }),
+        httpOptions: { timeout: 30000 },
+      },
+    });
+    return parseSessionSummary(response?.text, fallback);
+  } catch (error) {
+    // Log provider details on the server; return a useful local summary to the learner.
+    console.error('Gemma Summary Error:', error.message || error);
+    return fallback;
   }
 }

@@ -25,16 +25,17 @@ To provide a friendly, patient, and context-aware AI partner powered by Google G
 
 ## 6. Scope & Features
 
-### Implemented Through Stage 5
+### Implemented Through Stage 6
 - Language and proficiency selector.
 - Practice scenario selection.
 - No-login onboarding before practice; no personal information is collected.
 - Natural AI conversation powered by Google Gemma 4.
 - Gentle inline language correction and short explanations.
+- Session summary with actual session corrections, vocabulary, counts, and duration.
+- Aggregate progress stored in browser localStorage only.
 
 ### Planned
-- End-of-session summary and vocabulary key takeaways.
-- Lightweight practice progress tracking.
+- Further product stages based on learner feedback.
 
 ### Out-of-Scope Features (Explicitly Excluded)
 - User authentication / User accounts.

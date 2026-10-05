@@ -8,11 +8,11 @@ LinguaBuddy is an open-source project building a supportive companion for langua
 
 ---
 
-## Current Project Status: Stage 5 — Language, Level & Scenario Setup
+## Current Project Status: Stage 6 — Session Summary & Local Progress
 
 > LinguaBuddy is a **language-agnostic** practice partner. The learner's target language and level are sent to the backend as plain data and passed to Gemma 4, which performs the language-aware conversation, gentle corrections, vocabulary suggestions and level adaptation. There is no per-language grammar code in the app.
 >
-> Before chatting, the learner chooses a **Language**, **Level**, and **Scenario** in a no-login onboarding screen. One session configuration is sent with each request; changing a setting clears the current conversation. Gemma adapts its multilingual conversation, corrections, and vocabulary to the configuration. Session summaries and progress tracking are not implemented yet.
+> Before chatting, the learner chooses a **Language**, **Level**, and **Scenario** in a no-login onboarding screen. Gemma adapts the multilingual conversation, corrections, and vocabulary to that configuration. Ending a session requests one concise Gemma summary; aggregate progress is stored only in this browser. Raw conversations are temporary and are not persisted.
 
 ---
 
@@ -41,16 +41,20 @@ LinguaBuddy is an open-source project building a supportive companion for langua
 | **Gentle Corrections, Vocabulary, Adaptive Level** | ✅ Implemented | Gemma returns optional correction/vocabulary; any target language |
 | **Language & Level Selectors**     | ✅ Implemented | Choose the target language and level; sent to Gemma on every request |
 | **Scenario Selector & Onboarding** | ✅ Implemented | Choose language, level, and scenario before chat; scenario guides Gemma |
-| **Session Summary & Progress**     | ⏳ Planned     | Vocabulary review & progress tracking                |
+| **Session Summary & Local Progress** | ✅ Implemented | End-of-session learning summary and browser-local aggregate counts |
 
 ---
 
 ## Multilingual Design
 
 - **Supported by architecture:** any target language Gemma can handle (for example English, Japanese, Korean, Spanish, French, German, Hindi, Bengali, Italian, Portuguese, Mandarin Chinese). The language is data (`targetLanguage`), not application logic.
-- **Verification:** unit tests cover Unicode language handling. Live multilingual replies require the Google API to be reachable; see the verification notes in `docs/AI_DESIGN.md`.
+- **Verification:** unit tests cover Unicode language handling and safe summary fallbacks. Live Gemma replies require the Google API to be reachable; see `docs/AI_DESIGN.md`.
 - **Choosing practice settings:** select language, level, and scenario before starting. No language is assumed and no account is required. Changing any setting during practice clears the conversation.
 - **Adding a language:** add one line to `client/src/config/languages.js`.
+
+## Session Data & Privacy
+
+The active conversation, corrections, vocabulary, and session metrics stay temporarily in app memory. The browser stores only aggregate counts (completed sessions, learner messages, corrections, and vocabulary) in localStorage. LinguaBuddy does not save raw conversations or send progress to analytics services. Clearing this browser's site data removes local progress.
 
 ---
 
@@ -127,10 +131,11 @@ npm run dev
 curl http://localhost:5000/api/health
 ```
 
-6. Run the backend unit tests:
+6. Run the backend and session unit tests:
 
 ```
 npm run test:server
+npm run test:session
 ```
 
 

@@ -56,6 +56,43 @@ Sends the learner's newest message (plus settings and recent history) to Gemma 4
   - `400` - message missing, empty, or too long; target language missing; or invalid level/scenario.
   - `500` - AI service not configured, Gemma failed, or Gemma returned no usable reply.
 
+### `POST /api/session-summary`
+
+Requests one end-of-session summary using the same server-side Gemma model. The server stores no session data. If the conversation is empty, the key is unavailable, the provider times out/fails, or the model output is malformed, the API returns a factual local fallback with `fallback: true`.
+
+- **Request Body:**
+  ```json
+  {
+    "targetLanguage": "Japanese",
+    "level": "beginner",
+    "scenario": "travel",
+    "conversationHistory": [
+      { "role": "user", "content": "駅はどこですか？" },
+      { "role": "assistant", "content": "駅はまっすぐ行ったところです。" }
+    ],
+    "corrections": [],
+    "vocabulary": []
+  }
+  ```
+  - `targetLanguage`, `level`, and `scenario` use the same values and validation as `POST /api/chat`.
+  - `conversationHistory` is optional; malformed entries are ignored and only the latest 12 valid turns are considered.
+  - `corrections` and `vocabulary` are optional session records. The server sanitizes these and never accepts new corrections/vocabulary from the summary model.
+
+- **Response `200 OK`:**
+  ```json
+  {
+    "overview": "You practiced asking for directions.",
+    "strengths": ["You formed a clear question."],
+    "improvements": ["Try adding a polite closing."],
+    "corrections": [],
+    "vocabulary": [],
+    "fallback": false
+  }
+  ```
+  `fallback` is true when a local summary was used. Session message/correction/vocabulary counts and duration are computed in the browser and are not sent to analytics.
+
+- **Errors:** invalid configuration returns `400`. Provider/parse failures return the local fallback instead of exposing provider details.
+
 ## Planned (Not Implemented Yet)
 
-- `POST /api/session-summary`: end-of-session summary, key vocabulary, strengths and areas to practice.
+- Future stages based on learner feedback.

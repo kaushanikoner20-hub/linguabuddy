@@ -47,3 +47,37 @@ export async function sendChatMessage(
     difficulty: typeof data.difficulty === 'string' ? data.difficulty : null,
   };
 }
+
+export async function requestSessionSummary(payload, signal) {
+  let response;
+  try {
+    response = await fetch('/api/session-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal,
+    });
+  } catch (error) {
+    if (error.name === 'AbortError') throw error;
+    throw new Error(NETWORK_ERROR);
+  }
+
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error(SERVER_ERROR);
+  }
+  if (!response.ok || !data || typeof data.overview !== 'string') {
+    throw new Error(SERVER_ERROR);
+  }
+
+  return {
+    overview: data.overview,
+    strengths: Array.isArray(data.strengths) ? data.strengths : [],
+    improvements: Array.isArray(data.improvements) ? data.improvements : [],
+    corrections: Array.isArray(data.corrections) ? data.corrections : [],
+    vocabulary: Array.isArray(data.vocabulary) ? data.vocabulary : [],
+    fallback: Boolean(data.fallback),
+  };
+}

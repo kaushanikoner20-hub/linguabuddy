@@ -1,6 +1,6 @@
 # LinguaBuddy - User Practice Workflow
 
-This document describes the current no-login practice flow. Session summaries remain planned.
+This document describes the current no-login practice and session-summary flow.
 
 ## End-to-End Practice Workflow
 
@@ -27,7 +27,8 @@ This document describes the current no-login practice flow. Session summaries re
     │
 11. Continue Conversation (Repeat steps 6-10)
     │
-12. Learner starts a new conversation; current language, level and scenario are retained
+12. End Session requests a summary; aggregate progress is updated locally
+13. Practice Again starts a clean session with the same configuration, or Change Settings returns to setup
 ```
 
 ## Detailed Step Description
@@ -43,4 +44,7 @@ This document describes the current no-login practice flow. Session summaries re
 9. **AI Generation:** Model returns structured feedback (conversational reply + optional gentle correction + explanation).
 10. **Frontend Display:** UI presents AI reply clearly, emphasizing learning points.
 11. **Conversation Loop:** Smooth multi-turn practice session.
-12. **New Conversation:** The chat history clears and the selected language, level, and scenario stay in place. Changing any setting clears the conversation before the next message.
+12. **End Session:** The client sends at most the latest 12 turns plus actual session corrections/vocabulary to `POST /api/session-summary`. The summary includes an overview, evidence-based strengths and improvements, corrections, vocabulary, and temporary session stats.
+13. **Progress and next session:** Only aggregate totals are written to browser localStorage. Practice Again clears session data while retaining language, level, and scenario; Change Settings returns to setup.
+
+Session messages, metrics, corrections, and vocabulary exist only in frontend session state. They are discarded when the learner starts another session or returns to setup. Aggregate progress is local to the current browser and is not sent to analytics services.
